@@ -30,7 +30,7 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 260, 0, 290)
+mainFrame.Size = UDim2.new(0, 260, 0, 250)
 mainFrame.Position = UDim2.new(0.5, -130, 0.5, -85)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
@@ -47,12 +47,6 @@ toggleButton.Parent = mainFrame
 toggleButton.TextColor3 = Color3.new(1,1,1)
 toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 20
-
-toggleButton.MouseButton1Click:Connect(function()
-	aimLockActive = not aimLockActive
-	toggleButton.Text = aimLockActive and "AimLock On" or "AimLock Off"
-	toggleButton.BackgroundColor3 = aimLockActive and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
-end)
 
 local fovLabel = Instance.new("TextLabel")
 fovLabel.Size = UDim2.new(0, 200, 0, 25)
@@ -127,10 +121,21 @@ toggleEspBtn.TextColor3 = Color3.new(1,1,1)
 toggleEspBtn.Font = Enum.Font.SourceSansBold
 toggleEspBtn.TextSize = 20
 
-toggleUIBtn.MouseButton1Click:Connect(function()
-	uiVisible = not uiVisible
-	mainFrame.Visible = uiVisible
-	toggleUIBtn.Text = uiVisible and "Hide UI" or "Show UI"
+-- New input toggle handling (V for AimLock, RightShift for UI)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		uiVisible = not uiVisible
+		mainFrame.Visible = uiVisible
+		toggleUIBtn.Text = uiVisible and "Hide UI" or "Show UI"
+	end
+
+	if input.KeyCode == Enum.KeyCode.V then
+		aimLockActive = not aimLockActive
+		toggleButton.Text = aimLockActive and "AimLock On" or "AimLock Off"
+		toggleButton.BackgroundColor3 = aimLockActive and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+	end
 end)
 
 toggleFovBtn.MouseButton1Click:Connect(function()
@@ -203,6 +208,9 @@ zombiesFolder.ChildAdded:Connect(function(child)
 	end
 end)
 
+----------------------------------------------------------------
+-- FIND NEAREST ZOMBIE IN FOV
+----------------------------------------------------------------
 local function getClosestZombieInFOV()
 	local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
 	local closestDist = aimFOV
@@ -225,6 +233,9 @@ local function getClosestZombieInFOV()
 	return closestZombie
 end
 
+----------------------------------------------------------------
+-- MAIN LOOP
+----------------------------------------------------------------
 RunService.RenderStepped:Connect(function()
 	if draggingSlider then
 		local mouseX = UserInputService:GetMouseLocation().X
@@ -248,68 +259,4 @@ RunService.RenderStepped:Connect(function()
 			camera.CFrame = CFrame.new(camera.CFrame.Position, targetPart.Position)
 		end
 	end
-end)
-
-----------------------------------------------------------------
--- HEAD HITBOX EXPANDER FOR ZOMBIES (MOBILE SUPPORTED)
-----------------------------------------------------------------
-
-local zombiesFolder2 = workspace:WaitForChild("Zombies")
-
-local hitboxToggle = Instance.new("TextButton")
-hitboxToggle.Size = UDim2.new(0, 200, 0, 40)
-hitboxToggle.Position = UDim2.new(0, 30, 0, 230)  -- Đặt vị trí nút dưới cùng của GUI
-hitboxToggle.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-hitboxToggle.TextColor3 = Color3.new(1, 1, 1)
-hitboxToggle.Font = Enum.Font.SourceSansBold
-hitboxToggle.TextSize = 20
-hitboxToggle.Text = "Expand Hitbox: OFF"
-hitboxToggle.Parent = mainFrame
-
-local hitboxEnabled = false
-
-local function expandHeadHitbox(zombie)
-	if zombie:IsA("Model") and zombie:FindFirstChild("Head") then
-		local head = zombie.Head
-		if head:IsA("BasePart") then
-			head.Size = Vector3.new(5, 5, 5)
-			head.Transparency = 0.5
-			head.CanCollide = false
-			head.Material = Enum.Material.ForceField
-		end
-	end
-end
-
-local function resetHeadHitbox(zombie)
-	if zombie:IsA("Model") and zombie:FindFirstChild("Head") then
-		local head = zombie.Head
-		if head:IsA("BasePart") then
-			head.Size = Vector3.new(1, 1, 1)
-			head.Transparency = 0
-			head.Material = Enum.Material.Plastic
-		end
-	end
-end
-
-local function updateAllZombies()
-	for _, zombie in ipairs(zombiesFolder2:GetChildren()) do
-		if hitboxEnabled then
-			expandHeadHitbox(zombie)
-		else
-			resetHeadHitbox(zombie)
-		end
-	end
-end
-
-zombiesFolder2.ChildAdded:Connect(function(zombie)
-	task.wait(0.2)
-	if hitboxEnabled then
-		expandHeadHitbox(zombie)
-	end
-end)
-
-hitboxToggle.MouseButton1Click:Connect(function()
-	hitboxEnabled = not hitboxEnabled
-	hitboxToggle.Text = hitboxEnabled and "Expand Hitbox: ON" or "Expand Hitbox: OFF"
-	updateAllZombies()
 end)
