@@ -131,7 +131,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		toggleUIBtn.Text = uiVisible and "Hide UI" or "Show UI"
 	end
 
-	if input.KeyCode == Enum.KeyCode.V then
+	if input.KeyCode == Enum.KeyCode.J then
 		aimLockActive = not aimLockActive
 		toggleButton.Text = aimLockActive and "AimLock On" or "AimLock Off"
 		toggleButton.BackgroundColor3 = aimLockActive and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
